@@ -2,6 +2,7 @@
 import json
 import argparse
 import os
+import requests
 
 
 def normalize_path(path):
@@ -28,9 +29,23 @@ def process_sources(sources, sources_content, output_dir):
             f.write(content)
 
 
-def process_sources_content(sources_content):
-    for source_content in sources_content:
-        print(source_content)
+def download_sourcemap(url, output_dir):
+    s = requests.Session()
+    r = s.get(url)
+    if r.status_code != 200:
+        print('[!] Failed to download sourcemap')
+        return
+
+    data = r.json()
+    process_sources(data['sources'], data['sourcesContent'], output_dir)
+
+
+def download_sourcemaps_from_url_file(url_file, output_dir):
+    with open(url_file) as f:
+        for line in f:
+            url = line.strip()
+            print(f'[+] Downloading sourcemap from url: {url}')
+            download_sourcemap(url, output_dir)
 
 
 def process_sourcemap(sourcemap, output_dir):
@@ -41,12 +56,19 @@ def process_sourcemap(sourcemap, output_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process sourcemap')
-    parser.add_argument('--file', '-f', metavar='<FILE>', type=str,
-                        help='sourcemap file', required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--file', '-f', metavar='<FILE>', type=str,
+                       help='sourcemap file', required=False)
+    group.add_argument('--urls', '-u', metavar='<FILE>', type=str,
+                       help='file containing sourcemap urls', required=False)
     parser.add_argument('--output', '-o', metavar='<DIR>', type=str,
                         help='output directory', required=True)
 
     args = parser.parse_args()
 
-    print(f'[+] Processing sourcemap file: {args.file}')
-    process_sourcemap(args.file, args.output)
+    if args.urls:
+        print(f'[+] Processing sourcemap urls from file: {args.urls}')
+        download_sourcemaps_from_url_file(args.urls, args.output)
+    else:
+        print(f'[+] Processing sourcemap file: {args.file}')
+        process_sourcemap(args.file, args.output)
