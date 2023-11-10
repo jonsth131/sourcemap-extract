@@ -50,14 +50,16 @@ def get_sourcemap_url_from_js(session, url):
     if r.status_code != 200:
         return
 
-    for line in r.text.splitlines():
-        if 'sourceMappingURL' in line:
-            base_url = url.rsplit('/', 1)[0]
-            return base_url + '/' + line.split('sourceMappingURL=')[1]
+    line = r.text.splitlines()[-1]
+    if line.startswith('//# sourceMappingURL'):
+        base_url = url.rsplit('/', 1)[0]
+        return base_url + '/' + line.split('sourceMappingURL=')[1]
+
+    return None
 
 
 def get_sourcemap_url(s, url):
-    ext = url.split('.')[-1]
+    ext = url.split('.')[-1].split('?')[0]
     if ext == 'js':
         return get_sourcemap_url_from_js(s, url)
     elif ext != 'map':
