@@ -29,23 +29,37 @@ def process_sources(sources, sources_content, output_dir):
             f.write(content)
 
 
-def download_sourcemap(url, output_dir):
-    s = requests.Session()
-    r = s.get(url)
-    if r.status_code != 200:
-        print('[!] Failed to download sourcemap')
+def download_sourcemap(session, url, output_dir):
+    try:
+        r = session.get(url)
+    except:
         return
 
-    data = r.json()
-    process_sources(data['sources'], data['sourcesContent'], output_dir)
+    if r.status_code != 200:
+        return
+
+    return r.json()
 
 
 def download_sourcemaps_from_url_file(url_file, output_dir):
+    s = requests.Session()
     with open(url_file) as f:
         for line in f:
             url = line.strip()
+            ext = url.split('.')[-1]
+            if ext == 'js':
+                url = url + '.map'
+            elif ext != 'map':
+                continue
+
             print(f'[+] Downloading sourcemap from url: {url}')
-            download_sourcemap(url, output_dir)
+            data = download_sourcemap(s, url, output_dir)
+            if not data:
+                print('[!] Failed to download sourcemap')
+                continue
+
+            process_sources(data['sources'],
+                            data['sourcesContent'], output_dir)
 
 
 def process_sourcemap(sourcemap, output_dir):
