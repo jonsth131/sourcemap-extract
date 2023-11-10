@@ -67,23 +67,58 @@ def get_sourcemap_url(s, url):
     return url
 
 
+def remove_js_urls_when_map_exists(urls):
+    new_urls = set()
+    for url in urls:
+        if url.endswith('.js'):
+            map_url = url + '.map'
+            if map_url not in urls:
+                new_urls.add(url)
+        else:
+            new_urls.add(url)
+    return new_urls
+
+
+def remove_non_js_or_map_urls(urls):
+    new_urls = set()
+    for url in urls:
+        ext = url.split('.')[-1].split('?')[0]
+        if ext in ['js', 'map']:
+            new_urls.add(url)
+    return new_urls
+
+
+def clean_urls(urls):
+    urls = remove_non_js_or_map_urls(urls)
+    urls = remove_js_urls_when_map_exists(urls)
+    return urls
+
+
 def download_sourcemaps_from_url_file(url_file, output_dir):
     s = requests.Session()
+    visited = set()
     with open(url_file) as f:
-        for line in f:
-            url = line.strip()
-            url = get_sourcemap_url(s, url)
-            if not url:
-                continue
+        urls = set(f.read().splitlines())
 
-            print(f'[+] Downloading sourcemap from url: {url}')
-            data = download_sourcemap(s, url, output_dir)
-            if not data:
-                print('[!] Failed to download sourcemap')
-                continue
+    urls = clean_urls(urls)
 
-            process_sources(data['sources'],
-                            data['sourcesContent'], output_dir)
+    for line in urls:
+        url = line.strip()
+        url = get_sourcemap_url(s, url)
+        if not url or url in visited:
+            continue
+
+        print(f'[+] Downloading sourcemap from url: {url}')
+        data = download_sourcemap(s, url, output_dir)
+        visited.add(url)
+        if not data:
+            print('[!] Failed to download sourcemap')
+            continue
+
+        process_sources(data['sources'],
+                        data['sourcesContent'], output_dir)
+
+    print(urls)
 
 
 def process_sourcemap(sourcemap, output_dir):
