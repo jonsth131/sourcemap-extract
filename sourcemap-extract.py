@@ -62,6 +62,7 @@ def get_sourcemap_url(s, url):
         return get_sourcemap_url_from_js(s, url)
     elif ext != 'map':
         return None
+    return url
 
 
 def download_sourcemaps_from_url_file(url_file, output_dir):
