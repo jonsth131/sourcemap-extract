@@ -118,8 +118,6 @@ def download_sourcemaps_from_url_file(url_file, output_dir):
         process_sources(data['sources'],
                         data['sourcesContent'], output_dir)
 
-    print(urls)
-
 
 def process_sourcemap(sourcemap, output_dir):
     with open(sourcemap) as f:
