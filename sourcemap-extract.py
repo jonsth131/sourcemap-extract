@@ -17,11 +17,11 @@ def process_sources(sources, sources_content, output_dir):
         content = sources_content[i]
 
         if not content:
-            print('[!] Empty file: ', source)
+            print('[!] Empty file:', source)
             continue
 
         path = normalize_path(source)
-        print('[+] Saving file: ', path)
+        print('[+] Saving file:', path)
 
         os.makedirs(os.path.dirname(
             os.path.join(output_dir, path)), exist_ok=True)
@@ -41,15 +41,36 @@ def download_sourcemap(session, url, output_dir):
     return r.json()
 
 
+def get_sourcemap_url_from_js(session, url):
+    try:
+        r = session.get(url)
+    except:
+        return
+
+    if r.status_code != 200:
+        return
+
+    for line in r.text.splitlines():
+        if 'sourceMappingURL' in line:
+            base_url = url.rsplit('/', 1)[0]
+            return base_url + '/' + line.split('sourceMappingURL=')[1]
+
+
+def get_sourcemap_url(s, url):
+    ext = url.split('.')[-1]
+    if ext == 'js':
+        return get_sourcemap_url_from_js(s, url)
+    elif ext != 'map':
+        return None
+
+
 def download_sourcemaps_from_url_file(url_file, output_dir):
     s = requests.Session()
     with open(url_file) as f:
         for line in f:
             url = line.strip()
-            ext = url.split('.')[-1]
-            if ext == 'js':
-                url = url + '.map'
-            elif ext != 'map':
+            url = get_sourcemap_url(s, url)
+            if not url:
                 continue
 
             print(f'[+] Downloading sourcemap from url: {url}')

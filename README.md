@@ -3,5 +3,5 @@ Sourcemap extraction util
 
 ## Usage
 ```
-sourcemap-extract.py -f <Sourcemap file> -o <Output directory>
+sourcemap-extract.py [-h] (--file <FILE> | --urls <FILE>) --output <DIR>
 ```
