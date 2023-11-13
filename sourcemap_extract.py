@@ -9,6 +9,8 @@ def normalize_path(path):
     path = path.replace('webpack://', '')
     path = path.replace('../', '')
     path = path.replace('./', '')
+    if path.startswith('/'):
+        path = path[1:]
     return os.path.normcase(path)
 
 
@@ -51,11 +53,15 @@ def get_sourcemap_url_from_js(session, url):
         return
 
     line = r.text.splitlines()[-1]
-    if line.startswith('//# sourceMappingURL'):
-        base_url = url.rsplit('/', 1)[0]
-        return base_url + '/' + line.split('sourceMappingURL=')[1]
+    if line.startswith('//# sourceMappingURL='):
+        return extract_sourcemap_url_from_js(line, url)
 
     return None
+
+
+def extract_sourcemap_url_from_js(line, url):
+    base_url = url.rsplit('/', 1)[0]
+    return base_url + '/' + line.split('sourceMappingURL=')[1]
 
 
 def get_sourcemap_url(s, url):
@@ -70,8 +76,9 @@ def get_sourcemap_url(s, url):
 def remove_js_urls_when_map_exists(urls):
     new_urls = set()
     for url in urls:
-        if url.endswith('.js'):
-            map_url = url + '.map'
+        ext = url.split('.')[-1].split('?')[0]
+        if ext == 'js':
+            map_url = url.split('?')[0] + '.map'
             if map_url not in urls:
                 new_urls.add(url)
         else:
