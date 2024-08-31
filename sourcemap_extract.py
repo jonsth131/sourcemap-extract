@@ -122,6 +122,10 @@ def download_sourcemaps_from_url_file(url_file, output_dir):
             print('[!] Failed to download sourcemap')
             continue
 
+        if 'sourcesContent' not in data:
+            print('[!] Missing sourcesContent in sourcemap')
+            continue
+
         process_sources(data['sources'],
                         data['sourcesContent'], output_dir)
 
@@ -129,6 +133,11 @@ def download_sourcemaps_from_url_file(url_file, output_dir):
 def process_sourcemap(sourcemap, output_dir):
     with open(sourcemap) as f:
         data = json.load(f)
+
+    if 'sourcesContent' not in data:
+        print('[!] Missing sourcesContent in sourcemap')
+        return
+
     process_sources(data['sources'], data['sourcesContent'], output_dir)
 
 
